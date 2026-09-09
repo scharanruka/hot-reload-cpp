@@ -3,7 +3,7 @@
 #include <random>
 
 const std::size_t AMOUNT{200};
-const float GRAVITY{1020.0f};
+const float GRAVITY{-1020.0f};
 const float MOUSE_FORCE{5950.0f};
 const float MOUSE_RADIUS{400.0f};
 const float EDGE_BOUNCE{0.86f};

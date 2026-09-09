@@ -1,6 +1,7 @@
 #include <dlfcn.h>
 #include <exception>
 #include <filesystem>
+#include <print>
 #include <raylib.h>
 #include <raymath.h>
 #include <stdexcept>
@@ -90,6 +91,8 @@ int main() {
 
   auto active_library{load_lib()};
 
+  fs::file_time_type last_write_time{fs::last_write_time(SOURCE_LIBRARY_PATH)};
+
   Simulation simulation{active_library.fns.create_simulation()};
   InputState input_state{};
 
@@ -98,6 +101,22 @@ int main() {
 
     if (input_state.should_reset) {
       simulation = active_library.fns.create_simulation();
+    }
+    // Hot reload logic
+    fs::file_time_type current_write_time{
+        fs::last_write_time(SOURCE_LIBRARY_PATH)};
+    if (last_write_time != current_write_time) {
+      try {
+        auto replacement{load_lib()};
+        dlclose(active_library.handle);
+        fs::remove(active_library.path);
+
+        active_library = std::move(replacement);
+        last_write_time = current_write_time;
+
+      } catch (const std::runtime_error &e) {
+        std::println("Failed to hot reload: {}", e.what());
+      }
     }
 
     active_library.fns.update_simulation(simulation, input_state,
